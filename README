@@ -1,0 +1,34 @@
+IMPORTANT NOTICE REGARDING YOUR RIGHT TO USE ARTOOLKIT:
+
+ARToolKit is made available freely for non-commercial use under the GNU General Public License. Commercial licenses to a professional implementation of ARToolKit are available for users for whom the GPL is not suitable, or who require a higher level of support, or who require customization or other specialist modifictions. Commercial licenses are administered by ARToolworks, Inc., Seattle, WA, USA. Click here for more information on ARToolKit licenses and your usage options.
+
+===========================================
+ARToolkit for Max/MSP+Jitter - jit.artkmulti
+by Andrew Roth - aroth21@yorku.ca
+http://www.aranarproductions.com/artk
+
+This software is provided as-is.
+
+===========================================
+
+
+
+ARToolKit is a software library for building Augmented Reality (AR) applications. These are applications that involve the overlay of virtual imagery on the real world. For example, in the image to the right a three-dimensional virtual character appears standing on a real card. It can be seen by the user in the head set display they are wearing. When the user moves the card, the virtual character moves with it and appears attached to the real object.
+One of the key difficulties in developing Augmented Reality applications is the problem of tracking the users viewpoint. In order to know from what viewpoint to draw the virtual imagery, the application needs to know where the user is looking in the real world.
+ARToolKit uses computer vision algorithms to solve this problem. The ARToolKit video tracking libraries calculate the real camera position and orientation relative to physical markers in real time. This enables the easy development of a wide range of Augmented Reality applications. Some of the features of ARToolKit include:
+
+Single camera position/orientation tracking.
+Tracking code that uses simple black squares.
+The ability to use any square marker patterns.
+Easy camera calibration code.
+Fast enough for real time AR applications.
+SGI IRIX, Linux, MacOS and Windows OS distributions.
+Distributed with complete source code.
+A complete description of features is available here.
+
+This website contains a link to the ARToolKit software, projects that have used ARToolKit, sample ARToolKit applications, a discussion group and full documentation. All the information needed to be able to easily develop AR applications with ARToolKit can be found here.
+
+ARToolKit was originally developed by Dr. Hirokazu Kato, and its ongoing development is being supported by the Human Interface Technology Laboratory (HIT Lab) at the University of Washington, HIT Lab NZ at the University of Canterbury, New Zealand, and ARToolworks, Inc, Seattle.
+
+For information on ARToolkit, contact Philip Lamb.
+http://www.hitl.washington.edu/artoolkit/
