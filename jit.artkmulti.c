@@ -313,16 +313,14 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				object[i].visible = 0;
 				continue;
 			}
-			
-			/* calculate the transform for each marker */
+						/* calculate the transform for each marker */
 			if( object[i].visible == 0 ) {
-					
+				
 				l[i] = 1;
 				arGetTransMat(&marker_info[k],
 							  object[i].marker_center, object[i].marker_width,
 							  object[i].trans);
-				//failed experiement with camera frustum
-				
+	
 				//this needs to be sorted into multi-dim arrays and more dynamic quat and Q->aa functions
 			
 				arUtilMat2QuatPos(object[i].trans, qt, pos);
@@ -333,12 +331,15 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				glpos[1] = -(float)pos[1];
 				glpos[2] = -(float)pos[2];
 				
+				for (n=0;n<16;n++){
+					x->m1[0] = 0;
+					x->m2[0] = 0;
+					x->m3[0] = 0;
+					x->m4[0] = 0;
+				}
+				
 				if (object[i].id == 0) {
-					/*for (n=0;n<16;n++){
-						x->m1[n] = gl_para[n];
-					}
-					*/
-					x->m1[0] = object[i].id;
+					x->m1[0] = object[i].visible;
 					x->m1[1] = *aa;
 					x->m1[2] = *az;
 					x->m1[3] = *ay;
@@ -347,7 +348,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m1[6] = glpos[1];
 					x->m1[7] = glpos[2];
 				}	else if (object[i].id == 1) {
-					x->m2[0] = object[i].id;
+					x->m2[0] = object[i].visible;
 					x->m2[1] = *aa;
 					x->m2[2] = *az;
 					x->m2[3] = *ay;
@@ -356,7 +357,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m2[6] = glpos[1];
 					x->m2[7] = glpos[2];
 				} else if (object[i].id == 2) {
-					x->m3[0] = object[i].id;
+					x->m3[0] = object[i].visible;
 					x->m3[1] = *aa;
 					x->m3[2] = *az;
 					x->m3[3] = *ay;
@@ -365,7 +366,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m3[6] = glpos[1];
 					x->m3[7] = glpos[2];
 				}  else if (object[i].id == 3) {
-					x->m4[0] = object[i].id;
+					x->m4[0] = object[i].visible;
 					x->m4[1] = *aa;
 					x->m4[2] = *az;
 					x->m4[3] = *ay;
@@ -390,14 +391,16 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				glpos[0] = (float)pos[0];
 				glpos[1] = -(float)pos[1];
 				glpos[2] = -(float)pos[2];
+				
+				for (n=0;n<16;n++){
+					x->m1[0] = 0;
+					x->m2[0] = 0;
+					x->m3[0] = 0;
+					x->m4[0] = 0;
+				}
 				 
 				if (object[i].id == 0) {
-					/*for (n=0;n<16;n++){
-						x->m1[n] = gl_para[n];
-					}
-					 */
-					
-					x->m1[0] = object[i].id;
+					x->m1[0] = object[i].visible;
 					x->m1[1] = *aa;
 					x->m1[2] = *az;
 					x->m1[3] = *ay;
@@ -406,7 +409,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m1[6] = glpos[1];
 					x->m1[7] = glpos[2];
 				} else if (object[i].id == 1) {
-					x->m2[0] = object[i].id;
+					x->m2[0] = object[i].visible;
 					x->m2[1] = *aa;
 					x->m2[2] = *az;
 					x->m2[3] = *ay;
@@ -415,7 +418,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m2[6] = glpos[1];
 					x->m2[7] = glpos[2];
 				} else if (object[i].id == 2) {
-					x->m3[0] = object[i].id;
+					x->m3[0] = object[i].visible;
 					x->m3[1] = *aa;
 					x->m3[2] = *az;
 					x->m3[3] = *ay;
@@ -424,7 +427,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m3[6] = glpos[1];
 					x->m3[7] = glpos[2];
 				} else if (object[i].id == 3) {
-					x->m4[0] = object[i].id;
+					x->m4[0] = object[i].visible;
 					x->m4[1] = *aa;
 					x->m4[2] = *az;
 					x->m4[3] = *ay;
@@ -434,7 +437,10 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m4[7] = glpos[2];
 				}
 			}
+			//post("object %d value of visible: %d", i, object[i].visible);
+
 			object[i].visible = 1;
+			
 		
 			//begin collision tests
 			for(iz=0;iz<4;iz++){
@@ -544,7 +550,7 @@ t_jit_err *jit_artkmulti_param_load(void) {
 	post("*** Initializing ARToolkit for Max/MSP***\n");
 	post("ARToolkit Property of ARToolworks\n");
 	post("Max External by Andrew Roth -- aroth21@yorku.ca\n");
-	post("Alpha Release Only\n");
+	post("Alpha Release Only - r002 \n");
 	post("Image size (x,y) = (%d,%d)\n", xsize, ysize);
 	post("Camera Params at: %s", cparam_name);
 	
