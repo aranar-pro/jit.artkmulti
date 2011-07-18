@@ -202,30 +202,16 @@ void jit_artkmulti_collide(t_jit_artkmulti *x,  t_symbol *s, long argc, t_atom *
 	for (ia = 0, ap = argv; ia < argc; ia++, ap++) {       // increment ap each time to get to the next atom
 		switch (argv[ia].a_type) {
 			case A_LONG:
-				//post("Long: %ld: %ld",ia+1,argv[ia].a_w.w_long);
 				break;
 			case A_FLOAT:
 				if(ia == 0) {
-					collide_dist = (double) argv[ia].a_w.w_float;
+					collide_dist = (double) argv[ia].a_w.w_float *1000;
 					post("collide radius : %f", collide_dist);
 				}
-				/*if (ia == 1) {
-					//post("Float %ld: %.2f",ia+1,argv[ia].a_w.w_float);
-					object[mkr-1].marker_center[0] = (double) argv[ia].a_w.w_float;
-				} else if (ia == 2){
-					object[mkr-1].marker_center[1] = (double) argv[ia].a_w.w_float;
-				}
-				 */
-				//post("Float %ld: %.2f",ia+1,argv[ia].a_w.w_float);
-				//if (ia < 2)
-				//post("Float %ld: %.2f", ia+1, argv[ia].a_w.w_float);
-				//object[ia].marker_center = (double) argv[ia].a_w.w_float;
 				break;
 			case A_SYM:
-				//post("Sym %ld: %s",ia+1, argv[ia].a_w.w_sym->s_name);
 				break;
 			default:
-				//post("%ld: unknown atom type (%ld)", ia+1, argv[ia].a_w.w_sym->s_name);
 				break;
 		}
 	}
@@ -245,7 +231,8 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 	ARUint8         *dataPtr;
     ARMarkerInfo    *marker_info;
     int             i, j, k, n, iz, jz;
-	int				l[4] = {-1, -1, -1, -1,};
+	float			l[4] = {0.0, 0.0, 0.0, 0.0};
+	
 
 	aa = &a_a;
 	ax = &a_x;
@@ -265,10 +252,13 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 			arVideoCapStop();
 			arVideoClose();
 			argCleanup();
-			xsize= in_minfo.dim[0];
-			ysize= in_minfo.dim[1]; 
+			xsize = in_minfo.dim[0];
+			ysize = in_minfo.dim[1]; 
 			post("input dimensions changed");
-			jit_artkmulti_new();
+			err=JIT_ERR_INVALID_INPUT; 
+			jit_artkmulti_param_load();
+			goto out;
+			
 			
 		}
 		
@@ -293,9 +283,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 		
 		double pos[3] = {0,0,0};
 		double glpos[3] = {0,0,0};
-		GLint xyview[2];
-		xyview[0] = in_minfo.dim[0];
-		xyview[1] = in_minfo.dim[1];
+	
 		
 		/* check for known patterns */
 		for( i = 0; i < objectnum; i++ ) {
@@ -308,15 +296,24 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					else /* make sure you have the best pattern (highest confidence factor) */
 						if( marker_info[k].cf < marker_info[j].cf ) k = j;
 				}
+			}	
+			//post("k %d: id = %d", k, object[i].id);
+			int p;
+			p = object[i].id;
+			if( k > -1 ) {
+				l[p] = 1.0f;
+				
 			}
+			
 			if( k == -1 ) {
+				l[p] = 0.0f;
 				object[i].visible = 0;
 				continue;
 			}
-						/* calculate the transform for each marker */
+			 
+			/* calculate the transform for each marker */
 			if( object[i].visible == 0 ) {
 				
-				l[i] = 1;
 				arGetTransMat(&marker_info[k],
 							  object[i].marker_center, object[i].marker_width,
 							  object[i].trans);
@@ -330,16 +327,13 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				glpos[0] = (float)pos[0];
 				glpos[1] = -(float)pos[1];
 				glpos[2] = -(float)pos[2];
-				
-				for (n=0;n<16;n++){
-					x->m1[0] = 0;
-					x->m2[0] = 0;
-					x->m3[0] = 0;
-					x->m4[0] = 0;
-				}
-				
+				 
+				x->m1[0] = l[0];
+				x->m2[0] = l[1];
+				x->m3[0] = l[2];
+				x->m4[0] = l[3];
 				if (object[i].id == 0) {
-					x->m1[0] = object[i].visible;
+				
 					x->m1[1] = *aa;
 					x->m1[2] = *az;
 					x->m1[3] = *ay;
@@ -347,8 +341,8 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m1[5] = glpos[0];
 					x->m1[6] = glpos[1];
 					x->m1[7] = glpos[2];
-				}	else if (object[i].id == 1) {
-					x->m2[0] = object[i].visible;
+				} else if (object[i].id == 1) {
+					
 					x->m2[1] = *aa;
 					x->m2[2] = *az;
 					x->m2[3] = *ay;
@@ -357,7 +351,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m2[6] = glpos[1];
 					x->m2[7] = glpos[2];
 				} else if (object[i].id == 2) {
-					x->m3[0] = object[i].visible;
+					
 					x->m3[1] = *aa;
 					x->m3[2] = *az;
 					x->m3[3] = *ay;
@@ -365,8 +359,8 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m3[5] = glpos[0];
 					x->m3[6] = glpos[1];
 					x->m3[7] = glpos[2];
-				}  else if (object[i].id == 3) {
-					x->m4[0] = object[i].visible;
+				} else if (object[i].id == 3) {
+					
 					x->m4[1] = *aa;
 					x->m4[2] = *az;
 					x->m4[3] = *ay;
@@ -386,21 +380,18 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				Quat_inverse();
 				Quat_toAxisAngle(aa, ax, ay, az);
 				
-				argConvGlpara(object[i].trans, gl_para);
+				//argConvGlpara(object[i].trans, gl_para);
 
 				glpos[0] = (float)pos[0];
 				glpos[1] = -(float)pos[1];
 				glpos[2] = -(float)pos[2];
 				
-				for (n=0;n<16;n++){
-					x->m1[0] = 0;
-					x->m2[0] = 0;
-					x->m3[0] = 0;
-					x->m4[0] = 0;
-				}
-				 
+				x->m1[0] = l[0];
+				x->m2[0] = l[1];
+				x->m3[0] = l[2];
+				x->m4[0] = l[3];
+				
 				if (object[i].id == 0) {
-					x->m1[0] = object[i].visible;
 					x->m1[1] = *aa;
 					x->m1[2] = *az;
 					x->m1[3] = *ay;
@@ -409,7 +400,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m1[6] = glpos[1];
 					x->m1[7] = glpos[2];
 				} else if (object[i].id == 1) {
-					x->m2[0] = object[i].visible;
+					
 					x->m2[1] = *aa;
 					x->m2[2] = *az;
 					x->m2[3] = *ay;
@@ -418,7 +409,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m2[6] = glpos[1];
 					x->m2[7] = glpos[2];
 				} else if (object[i].id == 2) {
-					x->m3[0] = object[i].visible;
+					
 					x->m3[1] = *aa;
 					x->m3[2] = *az;
 					x->m3[3] = *ay;
@@ -427,7 +418,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 					x->m3[6] = glpos[1];
 					x->m3[7] = glpos[2];
 				} else if (object[i].id == 3) {
-					x->m4[0] = object[i].visible;
+					
 					x->m4[1] = *aa;
 					x->m4[2] = *az;
 					x->m4[3] = *ay;
@@ -438,9 +429,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 				}
 			}
 			//post("object %d value of visible: %d", i, object[i].visible);
-
 			object[i].visible = 1;
-			
 		
 			//begin collision tests
 			for(iz=0;iz<4;iz++){
@@ -517,6 +506,7 @@ t_jit_err jit_artkmulti_matrix_calc(t_jit_artkmulti *x, void *inputs, void *outp
 out:
 	jit_object_method(in_matrix,_jit_sym_lock,in_savelock);
 	return err;
+	
 }
 	
 t_jit_artkmulti *jit_artkmulti_new(void)
@@ -539,9 +529,43 @@ t_jit_artkmulti *jit_artkmulti_new(void)
 
 t_jit_err *jit_artkmulti_param_load(void) {
 
-    //The multimarker dat file doesn't understand spaces in the file names, so the location for the markers has to be somewhere other than the Cycling '74 folder for support.
-	char			*cparam_name    = "/Applications/Max5/artk.support/camera_para.dat"; //this must be an absolute path
-	char            *model_name		= "/Applications/Max5/artk.support/multi/object_data2";
+    // Check for Environment (Max or Standalone) by Timothy Place of Tap Tools.  Thanks Tim!!
+	{
+		char	appname[256];
+		int		isMax, is_standalone = 0;
+		appname[0] = ' ';
+		
+#ifdef MAC_VERSION
+		CFBundleRef	bun = CFBundleGetMainBundle();
+		CFURLRef	url = CFBundleCopyBundleURL(bun);
+		CFStringRef string = CFURLCopyLastPathComponent(url);
+		CFStringGetCString(string, appname, 256, 0);
+		isMax =	strcmp(appname, "MaxMSP.app");
+		//strcmp 0 is true
+		//post("ARTK IsMax: %i AppName: %s", isMax, appname);
+		CFRelease(string);
+#else
+		char	*appname_win;
+		HMODULE hMod;
+		hMod = GetModuleHandle(NULL);
+		GetModuleFileName(hMod, (LPCH)appname, sizeof(appname));
+		
+		appname_win = strrchr(appname, '\\');
+		isMax =	strcmp(appname_win+1, "max.exe");	// Max 4 had a lower case first letter
+		if(isMax)	// the above did not match
+			isMax =	strcmp(appname_win+1, "Max.exe");	// Max 5 has an upper case first letter
+		//post("ARTK IsMax: %i AppName: %s", isMax, appname_win+1);
+#endif
+		is_standalone = (isMax != 0);
+	}
+	
+	
+	//The multimarker dat file doesn't understand spaces in the file names, so the location for the markers has to be somewhere other than the Cycling '74 folder for support.
+	char			*cparam_name    = "/Applications/Max5/artk support/camera_para.dat"; //this must be an absolute path
+	
+	
+	//char			*cparam_name    = "/Applications/Max5/artk.support/camera_para_isight2.dat"; //for isight on Macbook Pro (would require overhaul of lens_angle, camera distance and screen dimensions).
+	char            *model_name		= "/Applications/Max5/artk support/multi/object_data2";
 
 	//2 lines below VALID - FOR QUICkTIME in object
 	//if( arVideoOpen( vconf ) < 0 ) post ("videoOpen not working");
@@ -566,7 +590,7 @@ t_jit_err *jit_artkmulti_param_load(void) {
 	
 	//post("->>Object name = %c\n", object[i].name);
 	
-    argInit( &cparam, 1.0, 0, 640, 480, 0 );
+   // argInit( &cparam, 1.0, 0, 640, 480, 0 );
 	return 0;
 }
 
