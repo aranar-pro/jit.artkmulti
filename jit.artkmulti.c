@@ -528,55 +528,110 @@ t_jit_artkmulti *jit_artkmulti_new(void)
 }
 
 t_jit_err *jit_artkmulti_param_load(void) {
-
+	
+	//Paths for marker and camera.dat files
+	char 				caminputstring[MAX_PATH_CHARS] = "camera_para.dat";
+	char 				camfilename[MAX_PATH_CHARS] = "camera_para.dat";
+	char				camfilefullpath[MAX_PATH_CHARS] = " ";
+	char				camfilepathtemp[MAX_PATH_CHARS] = " ";
+	char 				markinputstring[MAX_PATH_CHARS] = "object_data2";
+	char 				markfilename[MAX_PATH_CHARS] = "object_data2";
+	char				markfilefullpath[MAX_PATH_CHARS] = " ";
+	char				markfilepathtemp[MAX_PATH_CHARS] = " ";
+	char				markfilepathfolder[MAX_PATH_CHARS] = " ";
+	short 				fullpath, path1, path2, err, fileflag;
+	long 				type1 = 'DATA', outtype1;
+	long 				type2 = 'TEXT', outtype2;
+	char				*cparam_name;
+	char				*model_name;
+	char				* pch;
     // Check for Environment (Max or Standalone) by Timothy Place of Tap Tools.  Thanks Tim!!
-	{
-		char	appname[256];
-		int		isMax, is_standalone = 0;
-		appname[0] = ' ';
+	char	appname[256];
+	char	appath[256];
+	int		isMax, is_standalone = 0;
+	appname[0] = ' ';
 		
 #ifdef MAC_VERSION
-		CFBundleRef	bun = CFBundleGetMainBundle();
-		CFURLRef	url = CFBundleCopyBundleURL(bun);
-		CFStringRef string = CFURLCopyLastPathComponent(url);
-		CFStringGetCString(string, appname, 256, 0);
-		isMax =	strcmp(appname, "MaxMSP.app");
+	CFBundleRef	bun = CFBundleGetMainBundle();
+	CFURLRef	url = CFBundleCopyBundleURL(bun);
+	CFStringRef string = CFURLCopyLastPathComponent(url);
+	CFStringRef stringfull = CFURLCopyFileSystemPath(url, 0);
+	CFStringGetCString(string, appname, 256, 0);
+	CFStringGetCString(stringfull, appath, 256, 0);
+	isMax =	strcmp(appname, "MaxMSP.app");
+	//post("%s", appath);
 		//strcmp 0 is true
 		//post("ARTK IsMax: %i AppName: %s", isMax, appname);
-		CFRelease(string);
+	CFRelease(string);
+	CFRelease(stringfull);
 #else
-		char	*appname_win;
-		HMODULE hMod;
-		hMod = GetModuleHandle(NULL);
-		GetModuleFileName(hMod, (LPCH)appname, sizeof(appname));
+	char	*appname_win;
+	HMODULE hMod;
+	hMod = GetModuleHandle(NULL);
+	GetModuleFileName(hMod, (LPCH)appname, sizeof(appname));
 		
-		appname_win = strrchr(appname, '\\');
-		isMax =	strcmp(appname_win+1, "max.exe");	// Max 4 had a lower case first letter
-		if(isMax)	// the above did not match
-			isMax =	strcmp(appname_win+1, "Max.exe");	// Max 5 has an upper case first letter
+	appname_win = strrchr(appname, '\\');
+	isMax =	strcmp(appname_win+1, "max.exe");	// Max 4 had a lower case first letter
+	if(isMax)	// the above did not match
+		isMax =	strcmp(appname_win+1, "Max.exe");	// Max 5 has an upper case first letter
 		//post("ARTK IsMax: %i AppName: %s", isMax, appname_win+1);
 #endif
-		is_standalone = (isMax != 0);
+	is_standalone = (isMax != 0);
+
+	if (path_frompathname(caminputstring, &path1, camfilename)) {
+		strcpy(camfilename, caminputstring);
+		locatefile_extended(camfilename, &path1, &outtype1, &type1, 1);
+		path_topotentialname(path1, camfilename, camfilefullpath, fileflag);
+		path_nameconform(camfilefullpath, camfilepathtemp, PATH_STYLE_SLASH, PATH_TYPE_BOOT);
+		//post("camfilefullpath: %s", camfilepathtemp);
+		if (locatefile_extended(camfilename, &path1, &outtype1, &type1, 1)) {
+			//jit_object_error((t_object *)x,"jit.textfile: file not found");
+			error("%s not in the Max Search Path.", camfilename);
+			return 0;
+		}
+	}
+	if (path_frompathname(markinputstring, &path2, markfilename)) {
+		strcpy(markfilename, markinputstring);
+		locatefile_extended(markfilename, &path2, &outtype2, &type2, 1);
+		path_topotentialname(path2, markfilename, markfilefullpath, fileflag);
+		path_nameconform(markfilefullpath, markfilepathtemp, PATH_STYLE_SLASH, PATH_TYPE_BOOT);
+		//post("markfilefullpath: %s", markfilepathtemp);
+		if (locatefile_extended(markfilename, &path2, &outtype2, &type2, 1)) {
+			//jit_object_error((t_object *)x,"jit.textfile: file not found");
+			error("%s not in the Max Search Path.", markfilename);
+			return 0;
+		}
 	}
 	
 	
+	strcpy(markfilepathfolder, markfilepathtemp);
+	//post("path to file %s", markfilepathfolder);
+	pch = strstr(markfilepathfolder,markfilename);
+	strncpy(pch,"\0",2);
+
+	//post("enclosing folder %s", markfilepathfolder);
+	
+	
 	//The multimarker dat file doesn't understand spaces in the file names, so the location for the markers has to be somewhere other than the Cycling '74 folder for support.
-	char			*cparam_name    = "/Applications/Max5/artk support/camera_para.dat"; //this must be an absolute path
+	//char			*cparam_name    = "/Applications/Max5/artk support/camera_para.dat"; //this must be an absolute path
+	//char			*cparam_name    = "/Applications/Max5/artk.support/camera_para.dat"; //this must be an absolute path
+	cparam_name		= camfilepathtemp;
 	
 	
 	//char			*cparam_name    = "/Applications/Max5/artk.support/camera_para_isight2.dat"; //for isight on Macbook Pro (would require overhaul of lens_angle, camera distance and screen dimensions).
-	char            *model_name		= "/Applications/Max5/artk support/multi/object_data2";
+	//char          *model_name		= "/Applications/Max5/artk.support/multi/object_data2";
+	model_name		= markfilepathtemp;
 
-	//2 lines below VALID - FOR QUICkTIME in object
+	//2 lines below VALID - FOR QUICKTIME in object
 	//if( arVideoOpen( vconf ) < 0 ) post ("videoOpen not working");
 	//if( arVideoInqSize(&xsize, &ysize) < 0 ) post ("camera fail");
 	//t_jit_artkmulti *x;
 	post("*** Initializing ARToolkit for Max/MSP***\n");
 	post("ARToolkit Property of ARToolworks\n");
 	post("Max External by Andrew Roth -- aroth21@yorku.ca\n");
-	post("Alpha Release Only - r002 \n");
+	post("Alpha Release Only - r003 \n");
 	post("Image size (x,y) = (%d,%d)\n", xsize, ysize);
-	post("Camera Params at: %s", cparam_name);
+	//post("Camera Params at: %s", cparam_name);
 	
 	if( arParamLoad(cparam_name, 1, &wparam) < 0 ) {
 		post("Camera parameter load error!!\n");
@@ -585,7 +640,7 @@ t_jit_err *jit_artkmulti_param_load(void) {
 	arInitCparam( &cparam );
 	arParamDisp( &cparam );
 
-	object =read_ObjData(model_name, &objectnum);
+	object =read_ObjData(model_name, &objectnum, markfilepathfolder);
 	post("--->>> Objectfile num = %d\n", objectnum);
 	
 	//post("->>Object name = %c\n", object[i].name);

@@ -15,6 +15,6 @@ typedef struct {
     double     marker_center[2];
 } ObjectData_T;
 
-ObjectData_T  *read_ObjData( char *name, int *objectnum );
+ObjectData_T  *read_ObjData( char *name, int *objectnum, char *pathtofolder );
 
 #endif

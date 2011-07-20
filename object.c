@@ -28,14 +28,15 @@
 #include <string.h>
 #include <ar.h>
 #include "object.h"
+#include "jit.common.h"
 
 static char *get_buff( char *buf, int n, FILE *fp );
 
-ObjectData_T *read_ObjData( char *name, int *objectnum )
+ObjectData_T *read_ObjData( char *name, int *objectnum, char *pathtofile )
 {
     FILE          *fp;
     ObjectData_T  *object;
-    char           buf[256], buf1[256];
+    char           buf[256], buf1[256], buf2[256], ptf[256];
     int            i;
 
 	post("Opening Data File %s\n",name);
@@ -54,7 +55,8 @@ ObjectData_T *read_ObjData( char *name, int *objectnum )
     if( object == NULL ) return(0);
 
     for( i = 0; i < *objectnum; i++ ) {
-		object[i].visible = 0;        
+		memset(&buf2[0], 0, sizeof(buf2));
+		object[i].visible = 0;   
 		
 		get_buff(buf, 256, fp);
         if( sscanf(buf, "%s", object[i].name) != 1 ) {
@@ -62,14 +64,20 @@ ObjectData_T *read_ObjData( char *name, int *objectnum )
             fclose(fp); free(object); return(0);
         }
 		post("Marker %s from oulet %d \n", object[i].name, i+1);
-		//post("Read in No. %d \n", i+1);
 
         get_buff(buf, 256, fp);
-        if( sscanf(buf, "%s", buf1) != 1 ) {
-          fclose(fp); free(object); return(0);}
-        
-        if( (object[i].id = arLoadPatt(buf1)) < 0 )
-            {fclose(fp); free(object); return(0);}
+
+      //converted to get the whole line path
+		if( sscanf(buf, "%[^\n]", buf1) != 1 ) {
+		fclose(fp); free(object); return(0);
+		}
+		
+		strcpy(ptf, pathtofile);
+		strcat(ptf, buf1);
+		strcpy(buf2, ptf);
+		if( (object[i].id = arLoadPatt(buf2)) < 0 ){
+			fclose(fp); free(object); return(0);
+		}
 
         get_buff(buf, 256, fp);
         if( sscanf(buf, "%lf", &object[i].marker_width) != 1 ) {
